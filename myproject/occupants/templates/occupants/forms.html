@@ -1,0 +1,258 @@
+{% extends 'occupants/base.html' %}
+{% load staticfiles %}
+{% block title %}Add Data{% endblock %}
+<!-- http://www.w3schools.com/bootstrap/bootstrap_tabs_pills.asp -->
+<!-- http://codepen.io/wizly/pen/BIKxo/ -->
+
+{% block body %}
+<div class="container-fluid">
+	<div class = "container-fluid">
+        <ul class="nav nav-tabs">
+            <li class="active" ><a href="#rooms" data-toggle = "tab">Rooms</a></li>
+            <li ><a href="#modules" data-toggle = "tab">Modules</a></li>
+	    	<li ><a href="#timemodule" data-toggle = "tab">Module Timetable</a></li>
+            <li ><a href="#groundtruth" data-toggle = "tab">Ground Truth</a></li>
+            <li><a href="#wifilogs" data-toggle="tab">WiFi Logs</a></li>
+        </ul> 
+	</div>
+
+	<div class="tab-content clearfix">          
+		<div class="tab-pane active" id ="rooms">
+			<div class = "container-fluid">
+				<h1><a href="/Room/add/" ><span class ="glyphicon glyphicon-plus"></span></a></h1>
+				<ul class = "list-group">
+				    {% for room in rooms %}
+				    <li class = "list-group-item"> {{ room }}
+					<a href="/Room/{{ room }}/" ><span class ="glyphicon glyphicon-edit"></span></a>
+					<a href="/Room/delete/{{ room }}/" ><span class ="glyphicon glyphicon-trash"></span></a>
+				    </li>
+				    {% endfor %}
+				</ul>
+			</div>
+		</div>
+
+		<div class="tab-pane" id="modules">
+			<div class = "container-fluid">
+				<h1><a href="/Module/add/" ><span class ="glyphicon glyphicon-plus"></span></a> </h1>
+				<ul class = "list-group">
+				    {% for module in modules %}
+				    <li class = "list-group-item"> {{ module }}
+					<a href="/Module/{{ module }}/"><span class ="glyphicon glyphicon-edit"></span></a>
+					<a href="/Module/delete/{{ module }}/"> <span class ="glyphicon glyphicon-trash"></span> </a>
+				    </li>
+				    {% endfor %}
+				</ul>
+			</div>
+		</div>
+
+		<div class="tab-pane" id="timemodule">
+			<div class = "container-fluid">
+				<h1><a href="/TimeModule/add/" ><span class ="glyphicon glyphicon-plus"></span></a> </h1>
+
+				<form class="form-horizontal" action="" method="POST" role="form">{% csrf_token %} <!--form to select room using post method and sending a csrf token-->
+                        <div class="form-group">
+                            <div class="col-sm-5">
+                                <select id="TMroomPicker" class="form-control" name="roomForm" placeholder="Room"><!--submit on change-->
+                                    <option value="" disabled selected>Room</option>
+                                    {% for room in rooms %} <!--automatically generate the form options from roomList-->
+                                        <option value="{{ room }}">{{ room }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                 <select id="TMdatePicker" class="form-control" name="dateForm" placeholder="Date"><!--submit on change-->
+                                    <option value="" disabled selected>Date</option>
+                                        {% for date in ModuleDates %}
+                                            <option value="{{ date.datetime |date:'Y-m-d H:i:s' }}">{{ date.datetime |date:'Y-m-d H:i:s' }}</option>
+                                        {% endfor %}
+                                </select>
+                            </div>
+                           <div class="col-sm-2">
+                                <button type="button" class="btn btn-default" onclick="TMRequest()">Submit</button> 
+                           </div>
+                        </div>
+                    </form><br>
+
+                    <div id="TMresult" style="display:none;">
+						<ul class = "list-group">
+						    <li class = "list-group-item">
+							    Room: <span id=TMroom></span><br><br>
+							    DateTime: <span id="TMdatetime"></span><br><br>
+							    Module: <span id="module"></span><br><br>
+							<a id="TMedit"><span class ="glyphicon glyphicon-edit">  </span></a>
+							<a id="TMdelete"><span class ="glyphicon glyphicon-trash">  </span></a>
+						    </li>
+						</ul> 
+					</div>
+			</div>  
+		</div>
+
+		<div  class = "tab-pane" id = "groundtruth">
+			<div class = "container-fluid">
+				<h1><a href="/GroundTruth/add/" ><span class ="glyphicon glyphicon-plus"></span></a> </h1>
+				
+				  <form class="form-horizontal" action="" method="POST" role="form">{% csrf_token %} <!--form to select room using post method and sending a csrf token-->
+                        <div class="form-group">
+                            <div class="col-sm-5">
+                                <select id="roomPicker" class="form-control" name="roomForm" placeholder="Room"><!--submit on change-->
+                                    <option value="" disabled selected>Room</option>
+                                    {% for room in rooms %} <!--automatically generate the form options from roomList-->
+                                        <option value="{{ room }}">{{ room }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                 <select id="datePicker" class="form-control" name="dateForm" placeholder="Date"><!--submit on change-->
+                                    <option value="" disabled selected>Date</option>
+                                        {% for date in GTDates %}
+                                            <option value="{{ date.datetime |date:'Y-m-d H:i:s' }}">{{ date.datetime |date:'Y-m-d H:i:s' }}</option>
+                                        {% endfor %}
+                                </select>
+                            </div>
+                           <div class="col-sm-2">
+                                <button type="button" class="btn btn-default" onclick="GTRequest()">Submit</button> 
+                           </div>
+                        </div>
+                    </form><br>
+
+                    <div id="result" style="display:none;">
+						<ul class = "list-group">
+						    <li class = "list-group-item">
+							    Room: <span id="GTroom"></span><br><br>
+							    DateTime: <span id="GTdatetime"></span><br><br>
+							    Binary Estimate: <span id="binary"></span><br><br>
+							    Percentage Estimate: <span id="percentage"></span><br><br>
+							<a id="edit"><span class ="glyphicon glyphicon-edit">  </span></a>
+							<a id="delete"><span class ="glyphicon glyphicon-trash">  </span></a>
+						    </li>
+						</ul> 
+					</div>
+			</div>
+		</div>
+
+		<div  class = "tab-pane" id = "wifilogs">
+			<div class = "container-fluid">
+				<!-- Upload Wifi Logs -->
+		        <h1><a href="/wifilogs" ><span class ="glyphicon glyphicon-plus"></span></a> </h1>
+
+		        <form class="form-horizontal" action="" method="POST" role="form">{% csrf_token %} <!--form to select room using post method and sending a csrf token-->
+                        <div class="form-group">
+                            <div class="col-sm-5">
+                                <select id="WFroomPicker" class="form-control" name="roomForm" placeholder="Room"><!--submit on change-->
+                                    <option value="" disabled selected>Room</option>
+                                    {% for room in rooms %} <!--automatically generate the form options from roomList-->
+                                        <option value="{{ room }}">{{ room }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                 <select id="WFdatePicker" class="form-control" name="dateForm" placeholder="Date"><!--submit on change-->
+                                    <option value="" disabled selected>Date</option>
+                                        {% for date in WiFiDates %}
+                                            <option value="{{ date.datetime |date:'Y-m-d H:i:s' }}">{{ date.datetime |date:'Y-m-d H:i:s' }}</option>
+                                        {% endfor %}
+                                </select>
+                                <!-- <input id="datePicker" class="form-control" name="dateForm" placeholder="Date"/> -->
+                            </div>
+                           <div class="col-sm-2">
+                                <button type="button" class="btn btn-default" onclick="WFRequest()">Submit</button> 
+                           </div>
+                        </div>
+                    </form><br>
+
+                    <div id="WFresult" style="display:none;">
+						<ul class = "list-group">
+						    <li class = "list-group-item">
+							    Room: <span id=WFroom></span><br><br>
+							    DateTime: <span id="WFdatetime"></span><br><br>
+							    WiFi Associated Count: <span id="count"></span><br><br>
+							<a id="WFedit"><span class ="glyphicon glyphicon-edit">  </span></a>
+							<a id="WFdelete"><span class ="glyphicon glyphicon-trash">  </span></a>
+						    </li>
+						</ul> 
+					</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+function TMRequest(){
+		var roomForm = document.getElementById("TMroomPicker").value;
+        var dateForm = document.getElementById("TMdatePicker").value;
+
+        $.ajax({
+            method: "POST",
+            data: {'roomForm': roomForm, 'dateForm': dateForm, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+            url: "TMRequest",
+
+            success: function(result) {
+                var info = result;
+                document.getElementById('TMresult').style.display = "inline";
+                document.getElementById("TMroom").innerHTML = info.room;
+                document.getElementById("TMdatetime").innerHTML = info.datetime;
+                document.getElementById("module").innerHTML = info.module;
+
+                var editLink = "/TimeModule/" + info.id + "/";
+				document.getElementById("TMedit").setAttribute("href",editLink);
+				var deleteLink = "/TimeModule/delete/" + info.id + "/";
+				document.getElementById("TMdelete").setAttribute("href",deleteLink);
+	    	}
+        });
+}
+
+function GTRequest(){
+		var roomForm = document.getElementById("roomPicker").value;
+        var dateForm = document.getElementById("datePicker").value;
+
+        $.ajax({
+            method: "POST",
+            data: {'roomForm': roomForm, 'dateForm': dateForm, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+            url: "GTRequest",
+
+            success: function(result) {
+                var info = result;
+                document.getElementById("result").style.display = "inline";
+                document.getElementById("GTroom").innerHTML = info.room;
+                document.getElementById("GTdatetime").innerHTML = info.datetime;
+                document.getElementById("binary").innerHTML = info.binary;
+                document.getElementById("percentage").innerHTML = info.percentage;
+
+                var editLink = "/GroundTruth/" + info.id + "/";
+				document.getElementById("edit").setAttribute("href",editLink);
+				var deleteLink = "/GroundTruth/delete/" + info.id + "/";
+				document.getElementById("delete").setAttribute("href",deleteLink);
+	    	}
+        });
+}
+
+function WFRequest(){
+		var roomForm = document.getElementById("WFroomPicker").value;
+        var dateForm = document.getElementById("WFdatePicker").value;
+
+        $.ajax({
+            method: "POST",
+            data: {'roomForm': roomForm, 'dateForm': dateForm, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+            url: "WFRequest",
+
+            success: function(result) {
+                var info = result;
+                document.getElementById('WFresult').style.display = "inline";
+                document.getElementById("WFroom").innerHTML = info.room;
+                document.getElementById("WFdatetime").innerHTML = info.datetime;
+                document.getElementById("count").innerHTML = info.count;
+
+                var editLink = "/Wifi/" + info.id + "/";
+				document.getElementById("WFedit").setAttribute("href",editLink);
+				var deleteLink = "/Wifi/delete/" + info.id + "/";
+				document.getElementById("WFdelete").setAttribute("href",deleteLink);
+	    	}
+        });
+}
+
+
+</script>
+
+
+{% endblock %}

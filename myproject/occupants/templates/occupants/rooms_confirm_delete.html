@@ -1,0 +1,15 @@
+{% extends 'occupants/base.html' %}
+{% load staticfiles %}
+{% block title %}Room Data{% endblock %}
+
+{% block body %}
+<form class = "Room Form", action = "", method = "post", enctype="multipart/form-data"> 
+    {% csrf_token %}
+     <div>
+        <p>Are you sure that you want to delete this room? </p>
+        <button type="submit" value = "Confirm"  class ="glyphicon glyphicon-ok"> </button>
+	<a href="/Rooms/" ><span class ="glyphicon glyphicon-remove"></span></a> 
+     </div>
+
+</form>
+{% endblock %}

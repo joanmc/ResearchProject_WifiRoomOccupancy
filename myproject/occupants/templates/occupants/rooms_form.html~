@@ -1,0 +1,14 @@
+{% extends 'occupants/base.html' %}
+{% load staticfiles %}
+{% block title %}Rooms Data{% endblock %}
+
+{% block body %}
+<form class = "Room Form", action = "", method = "post", enctype="multipart/form-data"> 
+    {% csrf_token %}
+    {% include 'occupants/form_template.html' %}
+     <div>
+        <button type="button" class="btn btn-default">Submit</button>
+     </div>
+
+</form>
+{% endblock %}

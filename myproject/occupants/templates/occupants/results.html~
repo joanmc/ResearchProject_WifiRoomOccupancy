@@ -1,0 +1,386 @@
+{% extends 'occupants/base.html' %}
+{% load staticfiles %}
+{% block title %}Results{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.2.1/Chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.2.1/Chart.min.js"></script>
+{% endblock %}
+<style>
+
+</style>
+{% block body %}
+    <div class="container-fluid">
+        <div class="centered" style="max-width: 1200px">
+                   <form class="form-horizontal" action="" method="POST" role="form">{% csrf_token %} <!--form to select room using post method and sending a csrf token-->
+                        <div class="form-group">
+                            <div class="col-sm-5">
+                                <select id="roomPicker" class="form-control" name="roomForm" placeholder="Room"><!--submit on change-->
+                                    <option value="" disabled selected>Room</option>
+                                    {% for room in roomList %} <!--automatically generate the form options from roomList-->
+                                        <option value="{{ room.room }}">{{ room.room }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                 <select id="datePicker" class="form-control" name="dateForm" placeholder="Date"><!--submit on change-->
+                                    <option value="" disabled selected>Date</option>
+                                        {% for date in dateList %}
+                                            <option value="{{ date }}">{{ date }}</option>
+                                        {% endfor %}
+                                </select>
+                                <!-- <input id="datePicker" class="form-control" name="dateForm" placeholder="Date"/> -->
+                            </div>
+                           <div class="col-sm-2">
+                                <button type="button" class="btn btn-default" onclick="GenCalendar()">Submit</button> 
+                           </div>
+                        </div>
+                    </form><br>
+
+            <h3 id="title"></h3><br>
+
+            <div class="" id="tableDiv">
+                <table id="calTable" class="table table-responsive">
+                </table>
+            </div>            
+
+            <div class="row">
+                <div class = "col-md-9 text-center">
+                    <canvas id="myChart""></canvas>
+                </div>
+            
+                <div class = "col-md-3 text-center" id="details" style="display: none">
+                    <div class="panel panel-default">
+                      <div class="panel-heading">Occupancy</div>
+                      <div class="panel-body" id="Binary Occupied"><span class="glyphicon glyphicon-ok"> Room is Occupied</span></div>
+                      <div class="panel-body" id="Binary Not Occupied"><span class="glyphicon glyphicon-remove"> Room is not Occupied</span></div>
+                    </div>
+                    <div class="panel panel-default">
+                      <div class="panel-heading">Percentage Occupancy</div>
+                      <div class="panel-body" id="Percentage"><span class="glyphicon glyphicon-signal"> <span id="Percentage Pred"></span>%</span></div>
+                    </div>
+                    <div class="panel panel-default">
+                      <div class="panel-heading">Range of People</div>
+                      <div class="panel-body"><span class="glyphicon glyphicon-user"></span> <span id="Range"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+<script>
+    function GenGraph(y) {
+        // function to generate the graph with chart.js
+        var timeModuleId = y;
+            $.ajax({ // make ajax request to views file
+                method: "POST",
+                data: {'timeModuleId': timeModuleId, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+                url: "/GenGraph",
+
+                success: function(result) {
+                    var testData = result; // set result to variable
+                    
+                    if (testData == 'error') {
+                        //document.getElementById('graphDiv').innerHTML = "";
+                    } else {
+                        $(document).ready(function(){
+
+                        var roomCap = testData["capacity"]; // set room capacity
+                        var predictionUpper = []
+                        var predictionLower = []
+                        var deviceNumb = []
+                        var regStu = []
+                        var gndTruthUpper = []
+                        var gndTruthLower = []
+                            
+                        for (var i=0; i<testData["timeSlice"].length; i+=1) {
+
+                            predictionUpper.push(testData["predictionUpper"]); // set occupancy estimate list
+                            predictionLower.push(testData["predictionLower"]); // set occupancy estimate list
+                            deviceNumb.push(Math.round(testData["timeSlice"][i]["associated"]));
+                            regStu.push(testData["registered"]); // set registered students
+
+                            if (testData["groundTruth"] > 0) {// set ground truth uper and lower range
+                                gndTruthUpper.push(Math.round(testData["capacity"] * (testData["groundTruth"] + 0.125)));
+                                gndTruthLower.push(Math.round(testData["capacity"] * (testData["groundTruth"] - 0.125)));
+                            } else {
+                                gndTruthUpper.push(0);
+                                gndTruthLower.push(0);
+                            }
+                        }  
+                        var adjAverage = 0;
+                        var sum = 0;
+                        for (var i=2; i<testData["timeSlice"].length-2; i+=1) {// set adjusted average
+                            sum = sum + (testData["timeSlice"][i]["associated"]);
+                        }
+                        adjAverage = sum / (testData["timeSlice"].length -4);
+
+                        var data = {
+                            labels: ["05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"],
+                            datasets: [{    
+                            //     label: 'GT Upper',
+                            //     fill: false,
+                            //     pointRadius: 0,
+                            //     borderDash: [10, 10],
+                            //     borderColor: 'rgba(102, 167, 192, 1)',
+                            //     data: gndTruthUpper   
+                            // },{
+                            //     label: 'GT Lower',
+                            //     fill: false,
+                            //     pointRadius: 0,
+                            //     borderDash: [10, 10],
+                            //     borderColor: 'rgba(102, 167, 192, 1)',
+                            //     data: gndTruthLower 
+                            // },{
+                                fill: true,
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                label: '',
+                                backgroundColor: 'rgba(255, 255, 255, 1)',
+                                borderColor: 'rgba(102, 167, 192, 0.2)',
+                                data: predictionLower
+                            },{
+                                fill: true,
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                backgroundColor: 'rgba(102, 167, 192, 0.2)',
+                                label: 'Prediction Range',
+                                borderColor: 'rgba(102, 167, 192, 0.2)',
+                                data: predictionUpper
+                            },{
+                                label: 'Devices',
+                                fill: false,
+                                borderColor: '#DBBA34',
+                                data: deviceNumb  
+                            },{
+                                label: 'Registered',
+                                fill: false,
+                                pointRadius: 0,
+                                borderColor: 'green',
+                                data: regStu     
+                            }]
+                        };
+
+                        var options = {
+                            scales: {
+                                gridLines: {
+                                    display:false
+                                },
+                                yAxes: [{
+                                    gridLines: {
+                                            display:false
+                                        },
+                                    ticks: {
+                                        min: 0,
+                                        max: roomCap
+                                    }
+                                }],
+                                xAxes: [{
+                                    gridLines: {
+                                            display:false
+                                        },
+                                    ticks: {
+                                    }
+                                }]
+                            }
+                        };
+
+                        var ctx = document.getElementById("myChart").getContext("2d");
+                        var myChart = new Chart(ctx, {
+                            type: 'line',
+                            data: data,
+                            options: options
+                        }); 
+
+                        if (testData['binaryPred'] == 1) {
+                            document.getElementById("Binary Occupied").style.display = "inline";
+                            document.getElementById("Binary Not Occupied").style.display = "none";
+                        } else {
+                            document.getElementById("Binary Not Occupied").style.display = "inline";
+                            document.getElementById("Binary Occupied").style.display = "none";
+                        }
+
+                        document.getElementById("Percentage Pred").innerHTML = testData['percentagePred'] * 100;
+                        document.getElementById("Range").innerHTML = testData['estimatePred']; 
+
+                        document.getElementById("details").style.display = "inline"; 
+                    });    
+                }
+            }
+        }) 
+    };
+
+
+    function GenCalendar() {
+        // function to generate the claendar
+        var roomForm = document.getElementById("roomPicker").value;
+        var dateForm = document.getElementById("datePicker").value;
+
+        $.ajax({
+            method: "POST",
+            data: {'roomForm': roomForm, 'dateForm': dateForm, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+            url: "/calendarGen",
+
+            success: function(result) {
+
+                var calData = result;
+
+                if (calData == 'error') {
+                    document.getElementById('tableDiv').innerHTML = "";
+                    document.getElementById('tableDiv').innerHTML = 'no data available';
+                } else {
+                    document.getElementById('title').innerhtml = ""; // clear old title
+                    document.getElementById('title').innerHTML = calData["room"]["roomName"] + ", " + calData["room"]["building"] + ", " + calData["room"]["campus"] + ", Capacity: " + calData["room"]["capacity"]; // create new title
+
+                    $("#calTable").remove(); // clear old table from div
+                    var tableDiv = document.getElementById('tableDiv');
+                    var x = document.createElement("TABLE");
+                    x.setAttribute("id", "calTable");
+                    tableDiv.appendChild(x);
+
+                    var table = document.getElementById("calTable");
+                    var row = table.insertRow(0);
+                    var cell = row.insertCell(0); // make these <th> instead of standard table cells
+                    cell.innerHTML = "";
+                    var counter=1;
+
+                    for (z=0; z<calData["timeSlots"].length; z+=9) {
+
+                        cellDate = row.insertCell(counter); // make these <th> instead of standard table cells
+                        var dateVar = calData["timeSlots"][z]["date"];
+                        cellDate.innerHTML = dateVar;
+
+                        var roomDayGraph = document.createAttribute("onclick"); // insert function call on click
+                        roomDayGraph.value = "RoomDayGraph('" + dateVar + "')";
+                        cellDate.setAttributeNode(roomDayGraph);
+
+                        counter+=1;
+                    };
+
+                    for (x=0; x<calData["times"].length; x+=1) {
+
+                        var row = table.insertRow(x+1);
+                        var cellTime = row.insertCell(0);              // make these <th> instead of standard table cells
+                        cellTime.innerHTML = calData["times"][x]["time"];
+                        var attClick = document.createAttribute("onclick"); // insert function call on click
+                        attClick.value = "RoomHourGraph(" + x + ")";
+                        cellTime.setAttributeNode(attClick);
+
+                        var counter = 0;
+                        for (y=0; y<calData["timeSlots"].length; y+=1){
+
+                            if (calData["timeSlots"][y]["time"] == calData["times"][x]["time"]) {
+
+                                var cellTyp = row.insertCell(counter+1);
+                                cellTyp.innerHTML = calData["timeSlots"][y]["moduleName"];
+
+                                var attId = document.createAttribute("id"); // create id field
+                                attId.value = calData["timeSlots"][y]["timeModuleId"]; 
+
+                                var attClick = document.createAttribute("onclick"); // insert function call on hover
+                                attClick.value = "GenGraph(" + calData["timeSlots"][y]["timeModuleId"] + ")"; 
+
+                                cellTyp.setAttributeNode(attId);
+                                cellTyp.setAttributeNode(attClick);
+                                counter+=1;
+                            }
+                        }
+                    };
+                    
+                    for (var s=0; s<calData["times"].length; s+=1) {
+                        var time = calData["times"][s];
+                        for (var i=0; i<calData["timeSlots"].length; i+=1) {
+                            calData["timeSlots"][i]["moduleName"];
+                            calData["timeSlots"][i]["timeModuleId"];
+                        }
+                    }
+                }
+            }
+       })
+    }
+                    
+    function RoomDayGraph(x) {
+
+        selectedDate = x;
+        selectedRoom = document.getElementById("roomPicker").value;
+        $.ajax({
+            method: "POST",
+            data: {'selectedRoom': selectedRoom, 'selectedDate': selectedDate, csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,},
+            url: "/RoomDayGraph",
+
+            success: function(result) {
+
+                var roomDayData = result;
+
+                if (roomDayData == 'error') {
+                    //document.getElementById('graphDiv').innerHTML = "";
+                    //document.getElementById('graphDiv').innerHTML = 'no data available';
+                } else {        
+                    $(document).ready(function(){
+                          
+                        var roomCap = roomDayData["capacity"]; // set room capacity
+                        var prediction = []
+                        var regStudents = []
+                        var gndTruth = []
+                        var modules = []
+                        
+                        for (var i=0; i<roomDayData["timeSlice"].length; i+=1) {
+                            prediction.push(Math.round(roomDayData["capacity"] * (roomDayData["timeSlice"][i]["prediction"]))); // set occupancy estimate list
+                            regStudents.push(Math.round(roomDayData["timeSlice"][i]["registered"]));
+                            gndTruth.push(Math.round(roomDayData["capacity"] * (roomDayData["timeSlice"][i]["groundTruth"])));
+                            modules.push(Math.round(roomDayData["timeSlice"][i]["module"]));
+                            
+/*                            if (roomDayData["timeSlice"][i]["groundTruth"] > 0) {// set ground truth uper and lower range
+                                gndTruthUpper.push(Math.round(testData["capacity"] * (testData["groundTruth"] + 0.125)));
+                                gndTruthLower.push(Math.round(testData["capacity"] * (testData["groundTruth"] - 0.125)));
+                            } else {
+                                gndTruthUpper.push(0);
+                                gndTruthLower.push(0);
+                            }*/
+                        }  
+
+                        var data = {
+                            labels: ["09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", "12:00 -13:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 -16:00", "16:00 - 17:00"],
+                            datasets: [{
+                                fill: false,
+                                label: 'Prediction',
+                                borderColor: '#637B85',
+                                data: prediction
+                            },{
+                                label: 'Ground Truth',
+                                fill: false,
+                                borderColor: '#DBBA34',
+                                data: gndTruth  
+                            }]
+                        };
+
+                        var options = {
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        min: 0,
+                                        max: roomCap
+                                    }
+                                }]
+                            }
+                        };
+
+                        var ctx = document.getElementById("myChart").getContext("2d");
+                        var myChart = new Chart(ctx, {
+                            type: 'line',
+                            data: data,
+                            options: options
+                        }); 
+                    
+                        document.getElementById("details").style.display = "none";    
+                    }); 
+                }
+            }
+        })
+    }
+</script>
+
+{% endblock %}

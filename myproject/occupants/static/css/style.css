@@ -1,0 +1,91 @@
+html{
+	background-color: lightgrey;
+	font-family: 'Jaldi', sans-serif;
+	font-size: 17px;
+}
+table{
+	width: 100%;
+	border-collapse: collapse;
+	background-color: #f5f5f0;
+	padding: 20px;
+	border-radius: 5px 5px 5px 5px;
+}
+
+
+table tr {
+    text-align: center;
+    height: 50px;
+    padding-top:20px;
+}
+
+
+table td{
+    width: 16.5%;
+    color: black;
+    padding:10px;
+}
+
+table td:hover {
+    background-color: #eaeae1; 
+    padding:10px;   
+}
+
+/* navbar */
+.navbar-default {
+    background-color: #637B85;
+    border-color: #637B85;
+}
+
+/* link SIGNUP AND LOGIN*/ 
+.navbar-default .navbar-nav > li > a {
+    color: #3D4041;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+	font-weight: bold;
+    color: #DBBA34;
+}
+.navbar-default .navbar-nav > .active > a, 
+.navbar-default .navbar-nav > .active > a:hover, 
+.navbar-default .navbar-nav > .active > a:focus {
+	font-weight: bold;
+    color: #3D4041;
+    /* results and upload background */
+    background-color: #8ba0a9;
+}
+
+.navbar-default .navbar-toggle .icon-bar {
+	background-color: #DBBA34;
+}
+
+.panel-default > .panel-heading {
+  background-color: #D0DDE3;
+}
+
+/* Set black background color, white text and some padding */
+footer {
+	background-color: #DBBA34;
+	color: white;
+	padding: 15px;
+	position: relative;
+	height: 150px;
+	clear: both;
+	padding-top:50px;
+	margin-top: 50px;
+}
+
+#graph-container {
+	padding-top: 20px;
+}
+
+a{
+	cursor: default;
+	color: inherit;
+	text-decoration: none;
+}
+
+h3 {
+	font-weight: bold;
+	font-size: 24px;
+}
+
